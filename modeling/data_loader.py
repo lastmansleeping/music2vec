@@ -11,24 +11,40 @@ def split_song(audData, win_len=300, win_hop=100, num_seg=20, num_freq_comp=120)
 	return split_segments
 
 
-def create_batches(data, num_seg=20, batch_size=40, num_genre=8, inp_dim=(120, 300)):
+def songs2batch(data, label, num_seg=20, batch_size=40, num_genre=8, inp_dim=(120, 300)):
 	num_parts =  num_seg*num_genre // batch_size		## divide a song with num_seg segments into num_parts parts
 	batches = np.zeros((num_parts, batch_size, *inp_dim))
-	print(batches.shape)
 	data_split = np.hsplit(data, num_parts)
 	for part in range(num_parts):
 		batches[part] = data_split[part].reshape(batches.shape[1:])
+	labels = np.eye(num_genre)[np.repeat(label, int(num_seg//num_parts))]
+	return batches, labels
 
-	return batches
-
-if __name__ == '__main__':
+def get_batches(paths, labels, is_train, num_classes=8):
 	all_songs = []
-	num_genre = 8
-	path = '/home/rabbeh/Projects/DL/Data/npy/'
-	np_files = ['100552.npy','100949.npy','100975.npy','113558.npy']*2
-	for genre_ind in range(num_genre):
-		audData = np.load(path + np_files[genre_ind])
-		all_songs.append(split_song(audData))
+	data_batch = []
+	batch_size = 40
+	num_seg = 20
 
-	batches = create_batches(np.array(all_songs))
+	## Test Case
+	## Each song is a single batch
+	if is_train is not True:
+		for i,song_path in enumerate(paths):
+			audData = np.load(song_path)
+			split_seg = split_song(audData, num_seg=num_seg)
+			label_song = np.eye(num_classes)[np.repeat(labels[i], num_seg)]
+			data_batch.append({'X':split_seg, 'y':label_song})
+		return data_batch
 
+	for cl in range(num_classes):
+		audData = np.load(paths[cl])
+		all_songs.append(split_song(audData, num_seg=num_seg))
+
+	batch_data, batch_label = songs2batch(np.array(all_songs), labels, num_seg=num_seg, 
+			batch_size=batch_size, num_genre=num_classes)
+
+
+	for i in range(len(batch_data)):
+		data_batch.append({'X': batch_data[i],'y': batch_label})
+
+	return data_batch
