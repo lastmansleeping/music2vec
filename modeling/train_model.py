@@ -22,9 +22,9 @@ def split_data(input_path):
 
 
 def genre_classifier(data):
-	config = tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
+	config = tf.ConfigProto(allow_soft_placement=True) # , log_device_placement=True
 	config.gpu_options.allow_growth = True
-	config.gpu_options.per_process_gpu_memory_fraction = 0.90
+	# config.gpu_options.per_process_gpu_memory_fraction = 0.90
 	with tf.Session(config=config) as sess:
 		# with tf.device('/device:GPU:0'):
 		model = GenreClassifier()

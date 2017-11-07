@@ -2,6 +2,7 @@
 import numpy as np
 import tensorflow as tf
 import scipy
+import time
 
 import data_loader as DataLoader
 
@@ -19,7 +20,8 @@ get_class_from_genre = {
 
 class GenreClassifier(object):
 
-    def __init__(self, num_epochs=10, batch_size=40, num_iterations=800, learning_rate=5e-4, input_dimension=(120, 300, 1), num_classes=8, log_step=200):
+    def __init__(self, num_epochs=30, batch_size=40, num_iterations=800, learning_rate=5e-4, input_dimension=(120, 300, 1), num_classes=8, log_step=200):
+        self.start_time = time.time()
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.num_iterations = num_iterations
@@ -190,8 +192,8 @@ class GenreClassifier(object):
                     accuracies.append(accuracy)
 
                     if step % self.log_step == 0:
-                        print('step (%d): loss = %.3f, accuracy = %.3f' % (
-                            step, loss, accuracy))
+                        print('step (%d): loss = %.3f, accuracy = %.3f, time elapsed = %.3f minutes' % (
+                            step, loss, accuracy, ((time.time() - self.start_time)/60)))
                     step += 1
 
             # Evaluate validation set for each epoch
@@ -203,16 +205,16 @@ class GenreClassifier(object):
     def evaluate(self, sess, X_eval):
         # Create input for batch creation
         X_files, y_labels = list(), list()
-        for genre, files in X_train.items():
+        for genre, files in X_eval.items():
             X_files.extend(files)
             y_labels.extend([get_class_from_genre[genre]] * len(files))
 
         # For each iteration, get batches
         batches = DataLoader.get_batches(
-            paths=X_files, labels=y_labels, is_train=True, num_classes=self.num_classes)
+            paths=X_files, labels=y_labels, is_train=False, num_classes=self.num_classes)
 
         eval_accuracy = 0.0
-        eval_iter = 0
+        eval_iter = 0.0
         for batch in batches:
             X_ = batch['X']
             X_ = np.reshape(X_, [X_.shape[0], X_.shape[1], X_.shape[2], 1])
